@@ -16,7 +16,7 @@ function App() {
           </Segment>
           <Switch>
             <Route path='/' component={UploadPage} exact />
-            <Route path="/queue" component={QueuePage} exact/>
+            <Route path="/queue" component={QueuePage} exact />
           </Switch>
       </Container>
     </BrowserRouter>
