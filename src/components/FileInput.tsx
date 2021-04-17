@@ -17,7 +17,7 @@ function FileInput({ onFileChange }: FileInputProps): JSX.Element {
 
     return (
         <input
-            multiple={false}
+            multiple={true}
             onChange={onChange}
             type="file"
             data-testid="fileInput"

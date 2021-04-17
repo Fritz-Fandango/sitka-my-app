@@ -17,22 +17,22 @@ import {
 import FileInput from '../components/FileInput';
 
 function UploadPage(this: any): JSX.Element {
-    const [selectedFile, setSelectedFile] = useState();
     const [isFilePicked, setIsFilePicked] = useState(false);
     
-    const changeHandler = (event: { target: { files: React.SetStateAction<undefined>[]; }; }) => {
-        console.log(event.target.files);
-        // setSelectedFile();
-        setIsFilePicked(true);
+    const onFormSubmit = (evt: { preventDefault: () => void; }) => {
+        evt.preventDefault(); // Stop form submit
+        this.fileUpload(this.state.file).then((response: { data: any; }) => {
+            console.log(response.data);
+        });
     };
+    
+    const changeHandler = (fileArray: File[] | null) => {
+        return true;
+    }
 
-    // const objectRef = useRef(null);
-    // const [functionalRef, setFunctionalRef] = useState(null);
     const [isMounted, setIsMounted] = useState(false);
   
-    const onClickInput = () => this.input.click();
-
-    React.useEffect(() => {
+    useEffect(() => {
       setIsMounted(true);
       return () => setIsMounted(false);
     }, []);
@@ -49,16 +49,18 @@ function UploadPage(this: any): JSX.Element {
                 </Header>
                 <Form size='large'>
                     <Segment stacked>
-                        <FileInput onFileChange={changeHandler(EventTarget)}/>
+                        <FileInput onFileChange={(files) => changeHandler(files)} />
                         <Button
                             style={{ 
                                 backgroundColor: '#317BE0',
+                                marginTop: '20px',
                                 color: 'white'
                             }} 
                             fluid 
                             size='large'
+                            onClick={onFormSubmit}
                         >
-                            Submit
+                            Queue Files
                         </Button>
                     </Segment>
                 </Form>
