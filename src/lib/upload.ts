@@ -1,53 +1,38 @@
-import AWS from 'aws-sdk';
-import uuidv4 from 'uuid/v4';
-import { Progress } from 'aws-sdk/lib/request';
+import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
+import { v4 as uuidv4 } from "uuid";
 
-const API_VERSION = '2006-03-01';
-const BUCKET = 'sitka-engineering-sim';
-const IDENTITY_POOL_ID = 'us-west-2:9359ed2a-5b00-4b02-8923-1c8933f9e4e5';
-const REGION = 'us-west-2';
+const API_VERSION = "2006-03-01";
+const BUCKET = "sitka-engineering-sim";
+const IDENTITY_POOL_ID = "us-west-2:9359ed2a-5b00-4b02-8923-1c8933f9e4e5";
+const REGION = "us-west-2";
 
-const S3_PARAMS = {
-	apiVersion: API_VERSION,
-	params: {
-		Bucket: BUCKET
-	},
-};
-
-AWS.config.update({
-	region: REGION,
-	credentials: new AWS.CognitoIdentityCredentials({
-		IdentityPoolId: IDENTITY_POOL_ID
-	})
+const credentials = fromCognitoIdentityPool({
+  client: new CognitoIdentityClient({ region: REGION }),
+  identityPoolId: IDENTITY_POOL_ID,
 });
 
-const s3 = new AWS.S3(S3_PARAMS);
+const s3Client = new S3Client({
+  region: REGION,
+  credentials,
+});
 
 interface UploadArgs {
-	content: AWS.S3.Types.PutObjectRequest['Body'];
-	progressCallback: (loaded: number, total: number) => void;
+  content: Buffer | string;
+  progressCallback: (loaded: number, total: number) => void;
 }
 
-function upload({ content, progressCallback }: UploadArgs): Promise<AWS.S3.PutObjectOutput | Error> {
-	return new Promise((resolve, reject) => {
-		const uploader = s3.putObject({
-			Body: content,
-			Bucket: BUCKET,
-			Key: `frontend-files/${uuidv4()}`
-		}, function (error, data) {
-			if (error) {
-				return reject(error);
-			}
+function upload({ content, progressCallback }: UploadArgs): Promise<any> {
+  const command = new PutObjectCommand({
+    Body: content,
+    Bucket: BUCKET,
+    Key: `frontend-files/${uuidv4()}`,
+  });
 
-			return resolve(data);
-		})
-
-		if (progressCallback) {
-			uploader.on('httpUploadProgress', (event: Progress) =>
-				progressCallback(event.loaded, event.total)
-			);
-		}
-	});
+  return new Promise((resolve, reject) => {
+    s3Client.send(command).then(resolve).catch(reject);
+  });
 }
 
 export default upload;
